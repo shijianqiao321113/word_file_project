@@ -1,0 +1,80 @@
+/**
+ 大厅流量统计数据，制定 触发器
+ yy_yyfw表中，yy_zt在执行update 的时候触发
+*/
+
+--drop trigger yyfw_trigger;
+
+create or replace trigger yyfw_trigger 
+after update of yy_zt
+on yy_yyfw 
+for each row 
+when (new.yy_zt=4 or new.yy_zt=5 or new.yy_zt=6 or new.yy_zt=7) --成功，失败，取消，逾期
+declare
+cursor curOrder is select yy_jd,yy_zt from yy_ls where yy_yyfwdh=:new.yy_dh group by yy_jd,yy_zt;
+isbool number;
+isflag number:=0;
+cur_yy_jd number;
+cur_yy_zt number;
+begin
+ select count(*) into isbool from YY_SWJGLLTJ where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+ if isbool<=0 then
+    insert into YY_SWJGLLTJ(yy_swjgdm,yy_rq,yy_sd,yy_lx) values(:new.yy_swjgdm,to_date(to_char(:new.yy_rq,'yyyyMMdd'),'yyyyMMdd'),:new.yy_sd,:new.yy_lx); -- 对应 日期 时段 税务机关 预约类型 初始化数据
+ end if;
+ 
+ if :new.yy_zt=4 then--办理成功
+    if :new.yy_jd=4 then
+        isflag:=1;
+    end if;
+ elsif :new.yy_zt=5 then -- 预约失败，，排队失败，，办理失败
+      if :new.yy_jd=1 or :new.yy_jd=2 or :new.yy_jd=4 then
+        isflag:=1;
+      end if;
+ elsif :new.yy_zt=6 then  -- 预约取消 ，，排队取消，，叫号取消
+      if :new.yy_jd=1 or :new.yy_jd=2 or :new.yy_jd=3 then
+        isflag:=1;
+      end if;
+ elsif :new.yy_zt=7 then -- 预约逾期，，排队逾期
+      if :new.yy_jd=1 or :new.yy_jd=2 then
+        isflag:=1;
+      end if;
+ end if;
+ 
+ if isflag = 1 then 
+    begin
+         open curOrder;
+         loop
+             fetch curOrder INTO cur_yy_jd,cur_yy_zt;
+              exit when curOrder%notfound; 
+                            
+                if cur_yy_jd=1 and cur_yy_zt=4 then 
+                   update YY_SWJGLLTJ set yy_yys=yy_yys+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_jd=2 and cur_yy_zt=4 then 
+                   update YY_SWJGLLTJ set yy_pds=yy_pds+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_jd=3 and cur_yy_zt=4 then 
+                   update YY_SWJGLLTJ set yy_jhs=yy_jhs+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_jd=4 and cur_yy_zt=4 then 
+                   update YY_SWJGLLTJ set yy_bls=yy_bls+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_zt=6 or cur_yy_zt=7 then
+                   update YY_SWJGLLTJ set yy_qxyys=yy_qxyys+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_jd=2 and cur_yy_zt=6 then 
+                   update YY_SWJGLLTJ set yy_qhs=yy_qhs+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_jd=3 and cur_yy_zt=6 then 
+                   update YY_SWJGLLTJ set yy_ghs=yy_ghs+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                end if;
+                if cur_yy_jd=1 and cur_yy_jd=2 then 
+                   if cur_yy_zt=7 then
+                        update YY_SWJGLLTJ set yy_csh=yy_csh+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
+                   end if;
+                end if;
+         end loop;
+         close curOrder;
+    end;
+ end if;
+end;
