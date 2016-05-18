@@ -5,6 +5,7 @@
 
 --drop trigger yyfw_trigger;
 
+
 create or replace trigger yyfw_trigger 
 after update of yy_zt
 on yy_yyfw 
@@ -68,7 +69,7 @@ begin
                 if cur_yy_jd=3 and cur_yy_zt=6 then 
                    update YY_SWJGLLTJ set yy_ghs=yy_ghs+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
                 end if;
-                if cur_yy_jd=1 and cur_yy_jd=2 then 
+                if cur_yy_jd=1 or cur_yy_jd=2 then 
                    if cur_yy_zt=7 then
                         update YY_SWJGLLTJ set yy_csh=yy_csh+1 where yy_swjgdm=:new.yy_swjgdm and to_char(yy_rq,'yyyyMMdd')=to_char(:new.yy_rq,'yyyyMMdd') and yy_sd=:new.yy_sd and yy_lx=:new.yy_lx;
                    end if;
