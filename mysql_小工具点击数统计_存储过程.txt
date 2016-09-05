@@ -1,0 +1,143 @@
+DELIMITER $$
+
+USE `sqtnew`$$
+
+DROP PROCEDURE IF EXISTS `toolClickStatistics_proc`$$
+
+CREATE DEFINER=`sqtuser`@`%` PROCEDURE `toolClickStatistics_proc`(in versionType varchar(20),in startTime varchar(20),in endTime varchar(20))
+BEGIN
+	
+	insert into tbl_tool_click_statistics_proctable 
+	select phone,type,parentId,client_tool as newclient_tool,platform from 
+	tbl_tool_click_statistics
+	where version_type = versionType and createtime > startTime and createtime < endTime ;
+	select aa,bb,
+	case when bbb is null then '' else bbb end bbb,
+	case when cc1 is null then 0 else cc1 end cc1,
+	case when cc2 is null then 0 else cc2 end cc2,
+	case when cc is null then 0 else  cc end cc,
+	case when dd1 is null then 0 else  dd1 end dd1,
+	case when dd2 is null then 0 else  dd2 end dd2,
+	case when dd is null then 0 else  dd end dd,
+	case when ee1 is null then 0 else  ee1 end ee1,
+	case when ee2 is null then 0 else  ee2 end ee2,
+	case when ee is null then 0 else  ee end ee,
+	case when ff1 is null then 0 else  ff1 end ff1,
+	case when ff2 is null then 0 else  ff2 end ff2,
+	case when ff is null then 0 else ff end ff from (
+	select '全部' aa,sy.systemtool_name  bb,alldata.* from tbl_sys_newtool sy left join (
+	select '' as bbb,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) ) as cc1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) ) as cc2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and (type = 0 or type = 2) ) as cc,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) and phone is not null and phone != '' ) as dd1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) and phone is not null and phone != '' ) as dd2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and (type = 0 or type = 2) and phone is not null and phone != '' ) as dd,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) and (phone is null or phone = '') ) as ee1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) and (phone is null or phone = '') ) as ee2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and (type = 0 or type = 2) and (phone is null or phone = '') ) as ee,
+	 
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) and phone is not null and phone != '' ) as ff1,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and (type = 0 or type = 2) and phone is not null and phone != '' ) as ff2,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and (type = 0 or type = 2) and phone is not null and phone != '' ) as ff,
+	 cl.client_tool 
+	 from (select newclient_tool as client_tool from tbl_tool_click_statistics_proctable where type = 0 or type = 2 group by newclient_tool) as cl) as alldata on sy.systemtool_id = alldata.client_tool
+	 
+	 union
+	
+	select '经典小工具' aa,sy.systemtool_name  bb,alldata.* from tbl_sys_newtool sy left join (	
+	select '' as bbb,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 0 ) as cc1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 0 ) as cc2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 0 ) as cc,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 0  and phone is not null and phone != '') as dd1, 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 0  and phone is not null and phone != '') as dd2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 0  and phone is not null and phone != '') as dd,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 0  and (phone is null or phone = '')) as ee1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 0  and (phone is null or phone = '')) as ee2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 0  and (phone is null or phone = '')) as ee,
+	 
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 0 and phone is not null and phone != '') as ff1,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 0 and phone is not null and phone != '') as ff2,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 0 and phone is not null and phone != '') as ff,
+	 cl.client_tool 
+	  from (select newclient_tool as client_tool  from tbl_tool_click_statistics_proctable where  type = 0 group by newclient_tool) cl) as alldata on sy.systemtool_id = alldata.client_tool 
+	  
+	 union
+	 
+	select 
+	 '豆腐块' aa,
+	  mo.modularName bb,'' as bbb,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 1 ) as cc1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 1 ) as cc2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 1 ) as cc,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 1  and phone is not null and phone != '') as dd1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 1  and phone is not null and phone != '') as dd2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 1  and phone is not null and phone != '') as dd,
+	  
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 1  and (phone is null or phone = '')) as ee1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 1  and (phone is null or phone = '')) as ee2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 1  and (phone is null or phone = '')) as ee,
+	 
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 1 and phone is not null and phone != '') as ff1,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 1 and phone is not null and phone != '') as ff2,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 1 and phone is not null and phone != '') as ff,
+	 cl.client_tool 
+	 from (select * from tbl_tool_modular where versioncode = versionType) mo left join (select newclient_tool as client_tool from tbl_tool_click_statistics_proctable where type = 1 group by newclient_tool) cl 
+	on mo.modularId = cl.client_tool 
+	
+	union
+	
+	select '豆腐块下小工具' aa,sy.systemtool_name  bb,alldata.* from tbl_sys_newtool sy left join (
+	select 
+	 (select modularName from tbl_tool_modular where modularId=cl.parentId) as bbb,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool and type = 2 ) as cc1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool and type = 2 ) as cc2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool and type = 2 ) as cc,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool and type = 2  and phone is not null and phone != '') as dd1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool and type = 2  and phone is not null and phone != '') as dd2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool and type = 2  and phone is not null and phone != '') as dd,
+	  
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool and type = 2  and (phone is null or phone = '')) as ee1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool and type = 2  and (phone is null or phone = '')) as ee2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool and type = 2  and (phone is null or phone = '')) as ee,
+	 
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool and type = 2 and phone is not null and phone != '') as ff1,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool and type = 2 and phone is not null and phone != '') as ff2,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool and type = 2 and phone is not null and phone != '') as ff,
+	 cl.client_tool 
+	 from (select newclient_tool as client_tool,parentId from tbl_tool_click_statistics_proctable where type = 2 group by newclient_tool) cl) as alldata on sy.systemtool_id = alldata.client_tool  
+	
+	union
+	select '操作指南' aa, lin.linkname  bb,alldata.* from tbl_sqt_businessHall_linkManage lin left join (
+	select '' as bbb,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 3 ) as cc1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 3 ) as cc2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 3 ) as cc,
+	 
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 3  and phone is not null and phone != '') as dd1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 3  and phone is not null and phone != '') as dd2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 3  and phone is not null and phone != '') as dd,
+	  
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 3  and (phone is null or phone = '')) as ee1,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 3  and (phone is null or phone = '')) as ee2,
+	 (select COUNT(*) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 3  and (phone is null or phone = '')) as ee,
+	 
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'android' and newclient_tool = cl.client_tool  and type = 3 and phone is not null and phone != '') as ff1,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where platform = 'ios' and newclient_tool = cl.client_tool  and type = 3 and phone is not null and phone != '') as ff2,
+	 (select COUNT(distinct(phone)) from tbl_tool_click_statistics_proctable where newclient_tool = cl.client_tool  and type = 3 and phone is not null and phone != '') as ff,
+	 cl.client_tool 
+	 from (select newclient_tool as client_tool from tbl_tool_click_statistics_proctable where  type = 3 group by newclient_tool) cl ) as alldata on lin.linknum = alldata.client_tool
+	 ) as tbl ;
+	 
+	
+	 TRUNCATE TABLE tbl_tool_click_statistics_proctable;
+    END$$
+
+DELIMITER ;
