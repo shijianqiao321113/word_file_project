@@ -1,0 +1,78 @@
+DELIMITER $$
+
+USE sqtnew$$
+
+DROP PROCEDURE IF EXISTS toolClickRegionStatistics_proc$$
+
+CREATE  PROCEDURE toolClickRegionStatistics_proc(IN versionType VARCHAR(20),IN startTime VARCHAR(20),IN endTime VARCHAR(20),IN city VARCHAR(20))
+BEGIN
+	DECLARE var1 VARCHAR(20) ;  
+	DECLARE done INT DEFAULT -1;
+	DECLARE v_sql TEXT(30000);
+	DECLARE var2 VARCHAR(20);
+	
+	
+	DECLARE var3 INT DEFAULT 2;
+	
+	/* 声明游标 */  
+        DECLARE myCursor CURSOR FOR SELECT areaCode,areaName FROM tbl_city_area WHERE cityCode  = city;
+	/* 当游标到达尾部时，mysql自动设置done=1 */ 
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;
+    
+	INSERT INTO tbl_tool_click_region_proctable SELECT phone,TYPE,client_tool,taxofficeCode,platform FROM  tbl_tool_click_statistics WHERE version_type = versionType AND createtime > startTime AND createtime < endTime AND (TYPE = 0 OR TYPE = 2 OR TYPE = 3) AND SUBSTRING(taxofficeCode,2,4) = SUBSTRING(city,1,4) AND phone IS NOT NULL AND phone != '';
+	
+	#市
+	
+	SET v_sql = CONCAT('select * from  ',
+	'(select sys.systemtool_id as ID ,sys.systemtool_name as NAME ,case when tc.con is not null then tc.con else 0 end as A1,case when tc.dcon is not null then tc.dcon else 0 end as A2,(select CITYNAME from tbl_city where CITYCODE = ''',city,''') as A3  
+	from tbl_sys_newtool sys left join 
+	(select client_tool,COUNT(client_tool) con,COUNT(distinct phone) dcon from tbl_tool_click_region_proctable group by client_tool ) as tc on sys.systemtool_id = tc.client_tool
+	union
+	select li.linknum as ID ,li.linkname as NAME,case when tc.con is not null then tc.con else 0 end as A1,case when tc.dcon is not null then tc.dcon else 0 end as A2,(select CITYNAME from tbl_city where CITYCODE = ''',city,''') as A3  
+	 from tbl_sqt_businessHall_linkManage li left join 
+	(select client_tool,COUNT(client_tool) con,COUNT(distinct phone) dcon from tbl_tool_click_region_proctable group by client_tool ) as tc on li.linknum = tc.client_tool) as z1 
+	');
+	
+	#区
+	
+	/* 打开游标 */  
+	OPEN myCursor;  
+	/* 循环开始 */  
+	myLoop: LOOP 
+		/* 移动游标并赋值 */  
+		FETCH myCursor INTO var1,var2;
+		IF done = 1 THEN   
+			LEAVE myLoop;  
+		END IF;
+		
+	SET v_sql = CONCAT(v_sql,'	
+	 left join (
+	select sys.systemtool_id as ID ,case when tc.con is not null then tc.con else 0 end as A',(var3-1)*3+1,',case when tc.dcon is not null then tc.dcon else 0 end as A',(var3-1)*3+2,',''',var2,''' as A',(var3-1)*3+3,' 
+	from tbl_sys_newtool sys left join 
+	(select client_tool,COUNT(client_tool) con,COUNT(distinct phone) dcon from tbl_tool_click_region_proctable where SUBSTRING(taxofficeCode,1,7) = ''',SUBSTRING(var1,1,7),''' group by client_tool ) as tc on sys.systemtool_id = tc.client_tool
+	union
+	select li.linknum as ID ,case when tc.con is not null then tc.con else 0 end as A1,case when tc.dcon is not null then tc.dcon else 0 end as A2,''',var2,''' as A3 
+	 from tbl_sqt_businessHall_linkManage li left join 
+	(select client_tool,COUNT(client_tool) con,COUNT(distinct phone) dcon from tbl_tool_click_region_proctable where SUBSTRING(taxofficeCode,1,7) = ''',SUBSTRING(var1,1,7),''' group by client_tool ) as tc on li.linknum = tc.client_tool ) as z',var3,' on z',var3,'.ID =  z1.ID 
+	');
+	
+	SET var3 = var3 + 1;
+		
+	/* 循环结束 */  
+	END LOOP myLoop;
+	/* 关闭游标 */  
+	CLOSE myCursor;  
+	
+	SET v_sql = CONCAT(v_sql,'  order by CAST(z1.ID as unsigned) asc ');
+	
+	
+	SET @v_sql=v_sql;
+	
+	PREPARE stmt FROM @v_sql; 
+        EXECUTE stmt; 
+        DEALLOCATE PREPARE stmt; 
+	
+	TRUNCATE TABLE tbl_tool_click_region_proctable;
+    END$$
+
+DELIMITER ;
