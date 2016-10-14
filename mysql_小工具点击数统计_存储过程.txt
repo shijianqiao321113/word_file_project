@@ -138,6 +138,7 @@ BEGIN
 	 
 	
 	 TRUNCATE TABLE tbl_tool_click_statistics_proctable;
+	 
     END$$
 
 DELIMITER ;
